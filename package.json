@@ -1,17 +1,65 @@
 {
-  "name": "my-first-electron-app",
+  "name": "ai-agent-desktop",
   "version": "1.0.2",
-  "description": "",
-  "main": "index.js",
+  "description": "AI Agent Desktop Application",
+  "main": "out/main/index.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder"
+    "dev": "electron-vite dev",
+    "build": "electron-vite build && electron-builder",
+    "build:mac": "electron-vite build && electron-builder --mac",
+    "build:win": "electron-vite build && electron-builder --win",
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "preview": "electron-vite preview",
+    "lint": "eslint . --ext .ts,.tsx"
   },
   "build": {
-    "appId": "com.example.myfirstapp",
-    "productName": "MyFirstApp",
+    "appId": "com.aiagent.desktop",
+    "productName": "AI Agent",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "extraMetadata": {
+      "main": "out/main/index.js"
+    },
     "mac": {
-      "target": "dmg"
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
+    "win": {
+      "target": ["nsis", "zip"],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": true
     },
     "publish": {
       "provider": "github",
@@ -28,10 +76,26 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "electron-updater": "^6.3.9"
+    "electron-updater": "^6.3.9",
+    "lucide-react": "^1.17.0",
+    "marked": "^18.0.4"
   },
   "devDependencies": {
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.6.0",
+    "autoprefixer": "^10.5.0",
     "electron": "^42.3.0",
-    "electron-builder": "^26.8.1"
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^2.3.0",
+    "postcss": "^8.5.15",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3",
+    "vite": "^5.4.11",
+    "zustand": "^5.0.14"
   }
 }
