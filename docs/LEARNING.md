@@ -1,289 +1,299 @@
-# Electron 学习笔记：从 Hello World 到自动更新
+# Electron 学习笔记：从 Hello World 到 AI Agent 桌面应用
 
 ## 项目概述
 
-这是一个从零开始的 Electron 桌面应用开发学习项目，实现了从基础应用到完整的版本管理、自动发布和自动更新功能。
+这是一个从零开始的 Electron 桌面应用开发学习项目，实现了从基础应用到完整的版本管理、自动发布、自动更新功能，并集成了多种 AI Provider 支持。
 
 **项目地址：** https://github.com/dctongsheng/my-first-electron-app
 
+**当前版本：** v1.1.4
+
 ---
 
-## 第一部分：创建第一个 Electron 应用
+## 第一部分：项目架构演进
 
-### 1.1 项目初始化
+### 1.1 从简单应用到现代化架构
 
-```bash
-mkdir my-first-electron-app
-cd my-first-electron-app
-npm init -y
-npm install --save-dev electron electron-builder
-```
-
-### 1.2 核心文件结构
-
+**初始架构：**
 ```
 my-first-electron-app/
-├── package.json          # 项目配置
-├── index.js              # 主进程
-├── index.html            # 渲染进程（页面）
+├── package.json
+├── index.js          # 主进程
+├── index.html        # 渲染进程
 └── node_modules/
 ```
 
-### 1.3 主进程 (index.js)
-
-主进程负责创建窗口和管理应用生命周期：
-
-```javascript
-const { app, BrowserWindow } = require('electron')
-
-function createWindow () {
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  })
-  win.loadFile('index.html')
-}
-
-app.whenReady().then(createWindow)
+**现代化架构（React + TypeScript + Vite）：**
+```
+my-first-electron-app/
+├── package.json
+├── electron.vite.config.ts    # Vite 配置
+├── tailwind.config.js         # Tailwind 配置
+├── postcss.config.js          # PostCSS 配置
+├── src/
+│   ├── main/                  # 主进程
+│   │   ├── index.ts
+│   │   ├── ipc/
+│   │   │   ├── channels.ts    # IPC 通道定义
+│   │   │   └── handlers.ts    # IPC 处理器
+│   │   └── services/
+│   │       ├── ai.service.ts         # Anthropic AI 服务
+│   │       └── openai.service.ts    # OpenAI 兼容服务
+│   ├── preload/               # 预加载脚本
+│   │   └── index.ts
+│   └── renderer/              # 渲染进程
+│       ├── index.html
+│       ├── components/        # React 组件
+│       ├── hooks/             # 自定义 Hooks
+│       ├── store/             # 状态管理
+│       ├── styles/            # 样式文件
+│       └── types/             # TypeScript 类型
+└── out/                       # 编译输出
 ```
 
-### 1.4 渲染进程 (index.html)
+### 1.2 核心技术栈
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>我的第一个 Electron 应用</title>
-</head>
-<body>
-    <h1>Hello, Electron! 🚀</h1>
-</body>
-</html>
-```
+- **Electron**: 桌面应用框架
+- **electron-vite**: 快速的开发和构建工具
+- **React + TypeScript**: 现代化 UI 开发
+- **Tailwind CSS 3.x**: 实用优先的 CSS 框架
+- **Zustand**: 轻量级状态管理（支持持久化）
+- **@anthropic-ai/sdk**: Anthropic AI SDK
+- **marked**: Markdown 解析
 
-### 1.5 运行应用
+### 1.3 安装依赖
 
 ```bash
-npm start
+# Electron 核心依赖
+npm install --save-dev electron electron-builder electron-vite
+
+# React 相关
+npm install react react-dom
+
+# 开发依赖
+npm install --save-dev @vitejs/plugin-react typescript @types/react @types/react-dom vite
+
+# UI 相关
+npm install --save-dev tailwindcss@3.4.17 postcss autoprefixer
+npm install --save-dev @tailwindcss/forms @tailwindcss/typography
+
+# 状态管理
+npm install zustand
+
+# 图标库
+npm install lucide-react
+
+# AI SDK
+npm install @anthropic-ai/sdk
+
+# 自动更新（必须是生产依赖！）
+npm install --save electron-updater
+
+# Markdown 解析
+npm install marked
 ```
 
 ---
 
-## 第二部分：配置打包
+## 第二部分：配置文件详解
 
-### 2.1 package.json 配置
+### 2.1 electron.vite.config.ts
 
-```json
-{
-  "scripts": {
-    "start": "electron .",
-    "build": "electron-builder"
+```typescript
+import { defineConfig } from 'electron-vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
+
+export default defineConfig({
+  main: {
+    build: {
+      rollupOptions: {
+        output: { entryFileNames: '[name].js' }
+      }
+    }
   },
-  "build": {
-    "appId": "com.example.myfirstapp",
-    "productName": "MyFirstApp",
-    "mac": {
-      "target": "dmg"
+  renderer: {
+    plugins: [react()],
+    resolve: {
+      alias: { '@': path.resolve(__dirname, 'src/renderer') }
     }
   }
-}
+})
 ```
 
-### 2.2 打包命令
-
-```bash
-npm run build
-```
-
-打包后会在 `dist/` 目录生成 `.dmg` 安装包。
-
----
-
-## 第三部分：版本管理
-
-### 3.1 语义化版本号
-
-使用 `major.minor.patch` 格式：
-- **major**: 破坏性更新
-- **minor**: 新功能，向后兼容
-- **patch**: Bug 修复
-
-示例：`1.0.0` → `1.0.1` → `1.1.0` → `2.0.0`
-
-### 3.2 Git Tag 标记版本
-
-```bash
-# 创建版本 tag
-git tag v1.0.0
-
-# 推送 tag 到远程
-git push origin v1.0.0
-
-# 使用 npm 自动更新版本号
-npm version patch    # 1.0.0 → 1.0.1
-npm version minor    # 1.0.1 → 1.1.0
-npm version major    # 1.1.0 → 2.0.0
-```
-
----
-
-## 第四部分：GitHub Actions 自动发布
-
-### 4.1 创建 Workflow 文件
-
-创建 `.github/workflows/release.yml`：
-
-```yaml
-name: Release
-
-on:
-  push:
-    tags:
-      - 'v*'
-
-jobs:
-  release:
-    runs-on: macos-latest
-
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build and release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run build
-```
-
-### 4.2 配置 package.json 发布设置
+### 2.2 package.json 关键配置
 
 ```json
 {
+  "name": "ai-agent-desktop",
+  "version": "1.1.4",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build && electron-builder",
+    "build:mac": "electron-vite build && electron-builder --mac"
+  },
   "build": {
+    "appId": "com.aiagent.desktop",
+    "productName": "AI Agent",
+    "files": ["out/**/*"],
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.developer-tools",
+      "hardenedRuntime": true
+    },
     "publish": {
       "provider": "github",
-      "owner": "你的GitHub用户名",
+      "owner": "dctongsheng",
       "repo": "my-first-electron-app"
     }
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/你的GitHub用户名/my-first-electron-app.git"
   }
 }
 ```
 
-### 4.3 发布流程
+### 2.3 Tailwind CSS 3.x 配置
 
-```bash
-# 1. 修改代码
-# 2. 更新版本号
-npm version patch
+**重要！** Tailwind CSS 4.x 在生产构建时有配置问题，建议使用 3.x：
 
-# 3. 提交并推送
-git add .
-git commit -m "Fix: xxx"
-git push
-git push origin --tags
-```
-
-推送 tag 后，GitHub Actions 会自动构建并发布到 GitHub Releases。
-
----
-
-## 第五部分：自动更新功能
-
-### 5.1 安装依赖
-
-**注意！** `electron-updater` 必须作为**生产依赖**安装：
-
-```bash
-npm install --save electron-updater
-```
-
-### 5.2 主进程更新逻辑
-
+**tailwind.config.js:**
 ```javascript
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
-const { autoUpdater } = require('electron-updater')
-
-let mainWindow
-
-// 配置自动更新
-autoUpdater.autoDownload = false
-
-// 更新事件监听
-autoUpdater.on('checking-for-update', () => {
-  sendMessage('info', '正在检查更新...')
-})
-
-autoUpdater.on('update-available', (info) => {
-  sendMessage('available', `发现新版本 ${info.version}`)
-})
-
-autoUpdater.on('update-downloaded', (info) => {
-  sendMessage('downloaded', `更新下载完成: ${info.version}`)
-  dialog.showMessageBox(mainWindow, {
-    type: 'info',
-    title: '更新准备就绪',
-    message: '新版本已下载完成，重启应用以完成更新',
-    buttons: ['立即重启', '稍后']
-  }).then(result => {
-    if (result.response === 0) {
-      autoUpdater.quitAndInstall()
+module.exports = {
+  darkMode: ['class'],
+  content: ['./src/renderer/**/*.{js,jsx,ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: { DEFAULT: '#09090B', light: '#1E1E1E' },
+        secondary: { DEFAULT: '#2D2D2D', light: '#3D3D3D' },
+        accent: { DEFAULT: '#D4A27F', light: '#E0B89A' }
+      }
     }
-  })
-})
-
-// IPC 通信
-ipcMain.on('check-update', () => {
-  autoUpdater.checkForUpdates()
-})
-
-ipcMain.on('download-update', () => {
-  autoUpdater.downloadUpdate()
-})
+  },
+  plugins: [
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/forms')
+  ]
+}
 ```
 
-### 5.3 渲染进程 UI
-
+**postcss.config.js:**
 ```javascript
-const { ipcRenderer } = require('electron')
-
-// 检查更新
-document.getElementById('checkUpdate').addEventListener('click', () => {
-  ipcRenderer.send('check-update')
-})
-
-// 下载更新
-ipcRenderer.on('update-message', (event, data) => {
-  if (data.event === 'available') {
-    // 显示下载按钮
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {}
   }
-})
+}
+```
+
+**globals.css:**
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 不要使用 @import "tailwindcss" */
 ```
 
 ---
 
-## 第六部分：遇到的坑
+## 第三部分：AI Provider 集成
 
-### 坑 1：electron-updater 找不到模块
+### 3.1 支持的 AI Provider
+
+| Provider | API Base URL | 默认模型 |
+|----------|--------------|----------|
+| Anthropic | https://api.anthropic.com | claude-3-5-sonnet-20241022 |
+| DeepSeek | https://api.deepseek.com | deepseek-v4-pro |
+| OpenAI | https://api.openai.com/v1 | gpt-4o-mini |
+| OpenRouter | https://openrouter.ai/api/v1 | anthropic/claude-3.5-sonnet |
+
+### 3.2 OpenAI 兼容服务实现
+
+```typescript
+// src/main/services/openai.service.ts
+export class OpenAIService {
+  private config: OpenAIConfig | null = null
+
+  async *streamMessage(params: {
+    messages: ChatMessage[]
+    model?: string
+    maxTokens?: number
+    thinking?: boolean
+    reasoning_effort?: 'low' | 'high'
+  }): AsyncGenerator<StreamChunk> {
+    const response = await fetch(`${baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.config.apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_tokens: maxTokens,
+        stream: true,
+        thinking,      // DeepSeek 特定参数
+        reasoning_effort  // DeepSeek 特定参数
+      })
+    })
+
+    // 解析 SSE 流
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+    // ... 流解析逻辑
+  }
+}
+```
+
+### 3.3 IPC 通道设计
+
+```typescript
+// IPC 通道定义
+export const IPC_CHANNELS = {
+  AI_CHAT: 'ai:chat',
+  AI_STREAM: 'ai:stream',
+  AI_STREAM_CHUNK: 'ai:stream-chunk',
+  AI_SET_API_KEY: 'ai:set-api-key',
+  AI_SET_PROVIDER: 'ai:set-provider',
+  AI_GET_PROVIDERS: 'ai:get-providers',
+  AI_IS_CONFIGURED: 'ai:is-configured',
+  // ...
+}
+
+// 多 Provider 管理
+let currentProvider: Provider = 'deepseek'
+let providerApiKey: Record<string, string> = {
+  deepseek: 'sk-xxx...'
+}
+
+const anthropicService = getAIService()
+const openaiService = getOpenAIService()
+```
+
+---
+
+## 第四部分：遇到的坑与解决方案
+
+### 坑 1：Tailwind CSS 4.x 构建失败
+
+**错误信息：**
+```
+Error: Cannot apply unknown utility class `bg-primary`
+```
+
+**原因：**
+Tailwind CSS 4.x 的配置在生产环境中不被正确识别。
+
+**解决方案：**
+降级到 Tailwind CSS 3.4.17，使用标准配置方式。
+
+```bash
+npm uninstall tailwindcss @tailwindcss/postcss
+npm install --save-dev tailwindcss@3.4.17 postcss autoprefixer
+```
+
+### 坑 2：electron-updater 找不到模块
 
 **错误信息：**
 ```
@@ -294,70 +304,121 @@ Error: Cannot find module 'electron-updater'
 `electron-updater` 被安装在 `devDependencies` 中，打包时不会包含。
 
 **解决方案：**
-将 `electron-updater` 移到 `dependencies`：
-
 ```bash
-npm install --save electron-updater
+npm install --save electron-updater  # 注意是 --save 不是 --save-dev
 ```
 
-### 坑 2：版本号显示不一致
+### 坑 3：Electron 二进制下载失败
 
-**问题：**
-打包后 `require('../package.json')` 无法正确读取版本号。
+**错误信息：**
+```
+Error: Electron uninstall
+```
+
+**原因：**
+网络问题导致 Electron 二进制文件下载不完整或损坏。
 
 **解决方案：**
-通过 IPC 从主进程获取版本号：
+```bash
+# 清除缓存
+rm -rf ~/Library/Caches/electron/*
+rm -rf node_modules/electron/dist
 
-```javascript
-// 主进程
-const pkg = require('./package.json')
-mainWindow.webContents.send('app-version', pkg.version)
+# 手动下载
+curl -L -o ~/Library/Caches/electron/electron-v42.3.0-darwin-arm64.zip \
+  https://github.com/electron/electron/releases/download/v42.3.0/electron-v42.3.0-darwin-arm64.zip
 
-// 渲染进程
-ipcRenderer.on('app-version', (event, version) => {
-  document.getElementById('version').textContent = version
-})
+# 手动解压
+mkdir -p node_modules/electron/dist
+unzip ~/Library/Caches/electron/electron-*.zip -d node_modules/electron/
+
+# 创建 path.txt
+printf "Electron.app/Contents/MacOS/Electron" > node_modules/electron/path.txt
 ```
 
-### 坑 3：GitHub Release 默认为 Draft 状态
+### 坑 4：GitHub Actions 构建超时
 
-**问题：**
-GitHub Actions 构建后，Release 默认是草稿状态，需要手动发布。
+**原因：**
+Electron 二进制文件较大，下载可能超时。
 
 **解决方案：**
-使用 `gh` 命令自动发布：
-
-```bash
-gh release edit v1.0.0 --draft=false
-```
-
-或在 workflow 中添加参数。
+在 workflow 中增加超时时间或使用缓存。
 
 ---
 
-## 第七部分：完整工作流
+## 第五部分：版本管理与发布
+
+### 5.1 发布流程
+
+```bash
+# 1. 开发新功能
+# 修改代码并测试
+
+# 2. 更新版本号
+npm version patch    # 1.1.3 → 1.1.4
+
+# 3. 提交代码
+git add .
+git commit -m "feat: xxx"
+git push
+
+# 4. 推送 tag（已自动完成）
+# npm version 会自动创建并推送 tag
+
+# 5. GitHub Actions 自动构建
+# 查看：https://github.com/dctongsheng/my-first-electron-app/actions
+```
+
+### 5.2 GitHub Actions Workflow
+
+```yaml
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+---
+
+## 第六部分：完整工作流
 
 ### 开发流程
 
 ```bash
-# 1. 开发新功能
-# 修改代码
+# 1. 启动开发服务器
+npm run dev
 
-# 2. 测试
-npm start
+# 2. 修改代码并实时预览
 
-# 3. 提交代码
+# 3. 测试功能
+
+# 4. 提交代码
 git add .
 git commit -m "Feature: xxx"
 git push
 
-# 4. 发布新版本
+# 5. 发布新版本（可选）
 npm version patch
 git push
-git push origin --tags
-
-# 5. GitHub Actions 自动构建和发布
-# 6. 用户点击应用内"检查更新"即可升级
 ```
 
 ### 发布检查清单
@@ -368,16 +429,17 @@ git push origin --tags
 - [ ] `build.publish` 配置正确
 - [ ] Git tag 已推送
 - [ ] GitHub Actions 构建成功
-- [ ] Release 已发布（非 Draft 状态）
+- [ ] Release 已发布
 
 ---
 
-## 第八部分：参考资料
+## 第七部分：参考资料
 
 - [Electron 官方文档](https://www.electronjs.org/docs)
+- [electron-vite 文档](https://electron-vite.org/)
+- [Tailwind CSS 文档](https://tailwindcss.com/docs)
 - [electron-builder 文档](https://www.electron.build/)
-- [electron-updater 文档](https://www.electron.build/auto-update)
-- [GitHub Actions 文档](https://docs.github.com/en/actions)
+- [DeepSeek API 文档](https://api.deepseek.com/docs)
 
 ---
 
@@ -385,19 +447,25 @@ git push origin --tags
 
 通过这个项目，学习了：
 
-1. ✅ Electron 基础（主进程、渲染进程）
-2. ✅ 应用打包（electron-builder）
-3. ✅ 版本管理（语义化版本 + Git Tag）
-4. ✅ CI/CD（GitHub Actions）
-5. ✅ 自动更新（electron-updater）
-6. ✅ 遇到并解决了多个实际问题
+1. ✅ Electron 基础（主进程、渲染进程、IPC 通信）
+2. ✅ 现代化前端架构（React + TypeScript + Vite）
+3. ✅ 应用打包（electron-builder）
+4. ✅ 版本管理（语义化版本 + Git Tag）
+5. ✅ CI/CD（GitHub Actions）
+6. ✅ 自动更新（electron-updater）
+7. ✅ AI Provider 集成（Anthropic、OpenAI、DeepSeek、OpenRouter）
+8. ✅ 状态管理（Zustand + 持久化）
+9. ✅ 样式系统（Tailwind CSS）
+10. ✅ 遇到并解决了多个实际问题
 
 **关键要点：**
 - `electron-updater` 必须是生产依赖
-- 版本号统一从 `package.json` 读取
+- Tailwind CSS 3.x 比 4.x 更稳定
+- Electron 二进制下载问题需要手动处理
+- OpenAI 兼容 API 需要处理 SSE 流
 - GitHub Actions 简化了发布流程
-- 完整的自动更新需要正确的配置
 
 ---
 
-*文档创建时间：2026-05-29*
+*文档最后更新：2026-05-29*
+*当前版本：v1.1.4*
