@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>我的第一个 Electron 应用</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        h1 {
+            font-size: 48px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin: 0 0 30px 0;
+        }
+        .update-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .version-info {
+            margin-bottom: 15px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        button {
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .status {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .status.available { color: #ffd700; }
+        .status.downloading { color: #87ceeb; }
+        .status.downloaded { color: #90ee90; }
+        .status.error { color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <h1>Hello, Electron! 🚀</h1>
+
+    <div class="update-section">
+        <div class="version-info">版本: <span id="version">1.0.0</span></div>
+        <button id="checkUpdate">检查更新</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron')
+
+        document.getElementById('version').textContent = require('../package.json').version
+
+        // 检查更新按钮
+        document.getElementById('checkUpdate').addEventListener('click', () => {
+            ipcRenderer.send('check-update')
+            document.getElementById('checkUpdate').disabled = true
+            document.getElementById('checkUpdate').textContent = '检查中...'
+        })
+
+        // 监听更新消息
+        ipcRenderer.on('update-message', (event, data) => {
+            const statusEl = document.getElementById('status')
+            const btnEl = document.getElementById('checkUpdate')
+
+            statusEl.textContent = data.message
+            statusEl.className = 'status ' + data.event
+
+            switch(data.event) {
+                case 'available':
+                    btnEl.textContent = '下载更新'
+                    btnEl.disabled = false
+                    btnEl.onclick = () => ipcRenderer.send('download-update')
+                    break
+                case 'downloading':
+                    btnEl.textContent = '下载中...'
+                    btnEl.disabled = true
+                    break
+                case 'none':
+                case 'error':
+                    btnEl.textContent = '检查更新'
+                    btnEl.disabled = false
+                    btnEl.onclick = () => ipcRenderer.send('check-update')
+                    break
+            }
+        })
+    </script>
+</body>
+</html>
