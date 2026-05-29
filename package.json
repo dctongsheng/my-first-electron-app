@@ -82,6 +82,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
     "electron-updater": "^6.3.9",
     "lucide-react": "^1.17.0",
     "marked": "^18.0.4"
