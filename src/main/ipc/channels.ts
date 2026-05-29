@@ -5,6 +5,8 @@ export const IPC_CHANNELS = {
   AI_STREAM_CHUNK: 'ai:stream-chunk',
   AI_SET_API_KEY: 'ai:set-api-key',
   AI_IS_CONFIGURED: 'ai:is-configured',
+  AI_SET_PROVIDER: 'ai:set-provider',
+  AI_GET_PROVIDERS: 'ai:get-providers',
 
   // 文件操作
   FILE_SELECT: 'file:select',

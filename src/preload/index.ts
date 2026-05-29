@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ai: {
     isConfigured: () => ipcRenderer.invoke(IPC_CHANNELS.AI_IS_CONFIGURED),
     setApiKey: (apiKey: string) => ipcRenderer.invoke(IPC_CHANNELS.AI_SET_API_KEY, apiKey),
+    setProvider: (provider: string) => ipcRenderer.invoke(IPC_CHANNELS.AI_SET_PROVIDER, provider),
+    getProviders: () => ipcRenderer.invoke(IPC_CHANNELS.AI_GET_PROVIDERS),
     chat: (params: any) => ipcRenderer.invoke(IPC_CHANNELS.AI_CHAT, params),
     chatStream: (params: any, onChunk: (chunk: any) => void) => {
       const listener = (_: any, chunk: any) => onChunk(chunk)

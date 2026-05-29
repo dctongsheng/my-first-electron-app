@@ -6,6 +6,8 @@ declare global {
       ai: {
         isConfigured: () => Promise<boolean>
         setApiKey: (apiKey: string) => Promise<boolean>
+        setProvider: (provider: string) => Promise<boolean>
+        getProviders: () => Promise<Array<{ id: string; name: string; baseURL: string; defaultModel: string }>>
         chat: (params: any) => Promise<any>
         chatStream: (params: any, onChunk: (chunk: any) => void) => () => void
       }
@@ -54,7 +56,7 @@ export function useAI() {
     onError?: (error: string) => void
   ) => {
     if (!isConfigured) {
-      onError?.('请先设置 Anthropic API Key')
+      onError?.('请先设置 API Key')
       return
     }
 
