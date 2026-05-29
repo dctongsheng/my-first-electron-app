@@ -10,8 +10,6 @@ interface PersistState {
 
 const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString()
 
-const generateId = () => Math.random().toString(36).substring(2) + Date.now().toString()
-
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
