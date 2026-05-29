@@ -77,7 +77,10 @@
     <script>
         const { ipcRenderer } = require('electron')
 
-        document.getElementById('version').textContent = require('../package.json').version
+        // 接收主进程发送的版本号
+        ipcRenderer.on('app-version', (event, version) => {
+            document.getElementById('version').textContent = version
+        })
 
         // 检查更新按钮
         document.getElementById('checkUpdate').addEventListener('click', () => {

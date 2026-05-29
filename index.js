@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('path')
+const pkg = require('./package.json')
 
 let mainWindow
 
@@ -25,6 +26,11 @@ function createWindow () {
     provider: 'github',
     owner: '你的GitHub用户名',
     repo: 'my-first-electron-app'
+  })
+
+  // 发送版本号到渲染进程
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('app-version', pkg.version)
   })
 }
 
